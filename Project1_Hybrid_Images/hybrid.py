@@ -5,30 +5,32 @@ import cv2
 import numpy as np
 
 def cross_correlation_2d(img, kernel):
-	k_row=(kernel.shape(0)-1)/2
-	k_col=(kernel.shape(1)-1)/2
-	
-	kernel.shape=(1,len(kernel.flatten()))
-	kernel=np.transpose(kernel)
-	img_d=img.ndim
-	correlation_img=np.zeros((img.shape[0],img.shape[1]),dtype=float)
-	
-	if img_d==2:
-    	img=img.reshape((img.shape[0],img.shape[1],1))
+    k_row=int((kernel.shape[0]-1)/2)
+    k_col=int((kernel.shape[1]-1)/2)
     
+    kernel_flat=kernel.flatten()
+    img_d=np.ndim(img)
+    
+    if img_d==2:
+        img=img.reshape((img.shape[0],img.shape[1],1))
+
+    G=np.zeros((img.shape[0],img.shape[1],img.shape[2]))
+        
     for d in range(img.shape[2]):
-    	img_gray=img[:,:,d]
-
-    	for i in range(k_row,img_gray.shape[0]-k_row):
-        	for j in range(k_col,img_gray.shape[1]-k_col):
-	            g=[]
-	            img_gray_s=img_gray[i-k_row:i+k_row+1,j-k_col:j+k_col+1]
-	            img_gray_s=img_grays.flatten()
-	            
-	            g=np.matrix.dot(img_gray_s,kernel)
-	            correlation_img[i,j,d]=np.sum(g)
-
-	 return correlation_img
+        img_gray=img[:,:,d]
+        img_gray_pad=np.zeros((img.shape[0]+2*k_row,img.shape[1]+2*k_col))
+        img_gray_pad[k_row:img.shape[0]+k_row,k_col:img.shape[1]+k_col]=img_gray
+        
+        for i in range(img.shape[0]):
+            for j in range(img.shape[1]):
+                g=[]
+                img_gray_s=img_gray_pad[i:i+kernel.shape[0],j:j+kernel.shape[1]]
+                img_gray_s=img_gray_s.flatten()
+                G[i,j,d]=np.dot(img_gray_s,kernel_flat) 
+    
+    if G.shape[2]==1:
+        G=G.reshape(G.shape[0],G.shape[1])
+    return G
     '''Given a kernel of arbitrary m x n dimensions, with both m and n being
     odd, compute the cross correlation of the given image with the given
     kernel, such that the output is of the same dimensions as the image and that
@@ -47,13 +49,13 @@ def cross_correlation_2d(img, kernel):
         height and the number of color channels)
     '''
     # TODO-BLOCK-BEGIN
-    raise Exception("TODO in hybrid.py not implemented")
+    # raise Exception("TODO in hybrid.py not implemented")
     # TODO-BLOCK-END
 
 def convolve_2d(img, kernel):
-	kernel_trans=kernel.transpose()
+    kernel_trans=kernel[::-1,::-1]
 
-	retun cross_correlation_2d(img,kernel_trans)
+    return cross_correlation_2d(img,kernel_trans)
     '''Use cross_correlation_2d() to carry out a 2D convolution.
 
     Inputs:
@@ -67,19 +69,22 @@ def convolve_2d(img, kernel):
         height and the number of color channels)
     '''
     # TODO-BLOCK-BEGIN
-    raise Exception("TODO in hybrid.py not implemented")
+     # raise Exception("TODO in hybrid.py not implemented")
     # TODO-BLOCK-END
 
 def gaussian_blur_kernel_2d(sigma, width, height):
-	w_h=int((width-1)/2)
-	h_h=int((height-1)/2)
-	pi=np.pi
+    w_h=width/2
+    h_h=height/2
+    pi=np.pi
 	
-	a=np.array([[x**2+y**2 for x in range(-w_h,w_h+1)] for y in range(-h_h, h_h+1)])
+    a=np.array([[float(x**2+y**2) for x in range(-h_h,h_h+1)] for y in range(-w_h, w_h+1)])
 	
-	GaussianMatrix=1/(2*pi*sigma**2)*np.exp(-a/(2*sigma**2))
+    print(a)
+    GaussianMatrix=1/(np.sqrt(2*pi)*sigma)*np.exp(-a/(2*sigma**2))
+    GaussianMatrix = GaussianMatrix/np.sum(GaussianMatrix)
 
-	return GaussianMatrix
+    print(GaussianMatrix)
+    return GaussianMatrix
 
     '''Return a Gaussian blur kernel of the given dimensions and with the given
     sigma. Note that width and height are different.
@@ -96,13 +101,13 @@ def gaussian_blur_kernel_2d(sigma, width, height):
         with an image results in a Gaussian-blurred image.
     '''
     # TODO-BLOCK-BEGIN
-    raise Exception("TODO in hybrid.py not implemented")
+    # raise Exception("TODO in hybrid.py not implemented")
     # TODO-BLOCK-END
 
 def low_pass(img, sigma, size):
-	Gaussian_kernel=gaussian_blur_kernel_2d(sigma,size,size)
-	low_pass_img=convolve_2d(img,Gaussian_kernel)
-	return low_pass_img
+    Gaussian_kernel=gaussian_blur_kernel_2d(sigma,size,size)
+    low_pass_img=convolve_2d(img,Gaussian_kernel)
+    return low_pass_img
 
     '''Filter the image as if its filtered with a low pass filter of the given
     sigma and a square kernel of the given size. A low pass filter supresses
@@ -113,13 +118,13 @@ def low_pass(img, sigma, size):
         height and the number of color channels)
     '''
     # TODO-BLOCK-BEGIN
-    raise Exception("TODO in hybrid.py not implemented")
+    # raise Exception("TODO in hybrid.py not implemented")
     # TODO-BLOCK-END
 
 def high_pass(img, sigma, size):
-	low_pass_img=low_pass(img, sigma, size)
-	high_pass_img=img-low_pass_img
-	return high_pass_img
+    low_pass_img=low_pass(img, sigma, size)
+    high_pass_img=img-low_pass_img
+    return high_pass_img
     '''Filter the image as if its filtered with a high pass filter of the given
     sigma and a square kernel of the given size. A high pass filter suppresses
     the lower frequency components (coarse details) of the image.
@@ -129,7 +134,7 @@ def high_pass(img, sigma, size):
         height and the number of color channels)
     '''
     # TODO-BLOCK-BEGIN
-    raise Exception("TODO in hybrid.py not implemented")
+    # raise Exception("TODO in hybrid.py not implemented")
     # TODO-BLOCK-END
 
 def create_hybrid_image(img1, img2, sigma1, size1, high_low1, sigma2, size2,
